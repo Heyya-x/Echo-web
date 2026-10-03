@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="color-scheme" content="light dark">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <title>两只老虎 · 音乐体验</title>
+    <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body>
+    <!-- The recording itself. The page never analyses it live: the meters come
+         from data/song-data.js, measured offline from this exact file, so the
+         experience is identical whether the page is opened from a server or by
+         double-clicking index.html. -->
+    <audio id="audio" src="audio/liang-zhi-lao-hu.mp3" preload="auto" playsinline></audio>
+
+    <main class="screen experience" id="experienceScreen">
+        <header class="exp-header">
+            <div class="exp-titles">
+                <span class="caption">音乐体验</span>
+                <span class="title">两只老虎</span>
+            </div>
+
+            <span class="badge">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 3l1.6 4.6L18 9.2l-4.4 1.6L12 15.4l-1.6-4.6L6 9.2l4.4-1.6z"></path>
+                </svg>
+                分析完成
+            </span>
+        </header>
+
+        <div class="exp-body">
+            <section class="stage" id="stage">
+                <div class="orb" id="orb" role="img" aria-label="震动强度 0%">
+                    <div class="orb-fill" id="orbFill"></div>
+                    <div class="orb-inner">
+                        <svg viewBox="0 0 28 24" fill="currentColor" aria-hidden="true">
+                            <rect x="2" y="9" width="2.6" height="6" rx="1.3"></rect>
+                            <rect x="7" y="5" width="2.6" height="14" rx="1.3"></rect>
+                            <rect x="12" y="2" width="2.6" height="20" rx="1.3"></rect>
+                            <rect x="17" y="6" width="2.6" height="12" rx="1.3"></rect>
+                            <rect x="22" y="10" width="2.6" height="4" rx="1.3"></rect>
+                        </svg>
+                        <span class="orb-title">感受歌曲</span>
+                        <span class="orb-value" id="orbValue">震动强度 0%</span>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="side">
+                <div class="side-scroll">
+                    <p class="side-hint">让震动跟随音频变化，感受整首歌曲。</p>
+
+                    <canvas class="waveform" id="waveform" aria-hidden="true"></canvas>
+
+                    <p class="notice" id="hapticsNotice" hidden></p>
+
+                    <div class="card">
+                        <div class="card-row">
+                            <span>震动对比度</span>
+                            <span class="mono" id="contrastValue">1.6×</span>
+                        </div>
+                        <input type="range" id="contrastSlider" min="1" max="2.5" step="0.1" value="1.6"
+                               aria-label="震动对比度">
+                        <div class="card-scale"><span>柔和</span><span>强烈</span></div>
+                        <p class="card-footer">
+                            歌曲体验中轻与响段落的震动差距有多大。1× 为原始动态。
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-row">
+                            <span>马达指令</span>
+                            <span class="mono" id="motorValue">待机</span>
+                        </div>
+                        <canvas id="motorCanvas" aria-hidden="true"></canvas>
+                        <p class="card-footer" id="motorFooter">
+                            网页预览：手机马达将执行的震动窗口。
+                        </p>
+                        <label class="switch-row">
+                            <span>无震动设备时用低频声代替</span>
+                            <input type="checkbox" id="toneToggle">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="transport">
+                    <input type="range" id="progressSlider" min="0" max="1" step="0.001" value="0"
+                           aria-label="播放进度">
+                    <div class="times">
+                        <span id="timeCurrent">0:00</span>
+                        <span id="timeDuration">0:00</span>
+                    </div>
+                    <div class="buttons">
+                        <button class="round" id="restartButton" type="button" aria-label="从头播放">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="5" y="5" width="2.6" height="14" rx="1.3"></rect>
+                                <path d="M19 5.5v13L9 12z"></path>
+                            </svg>
+                        </button>
+                        <button class="round primary" id="playButton" type="button" aria-label="播放">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8 5.2l11 6.8-11 6.8z"></path>
+                            </svg>
+                        </button>
+                        <span class="round ghost" aria-hidden="true"></span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Browsers only start audio — and a motor — from a tap. The gate shows up
+         only when the automatic start is refused, so a device that allows it
+         goes straight into the song. -->
+    <div class="start-overlay" id="startOverlay" hidden>
+        <div class="start-card">
+            <span class="start-artwork" aria-hidden="true">
+                <svg viewBox="0 0 28 24" fill="currentColor">
+                    <rect x="2" y="9" width="2.6" height="6" rx="1.3"></rect>
+                    <rect x="7" y="5" width="2.6" height="14" rx="1.3"></rect>
+                    <rect x="12" y="2" width="2.6" height="20" rx="1.3"></rect>
+                    <rect x="17" y="6" width="2.6" height="12" rx="1.3"></rect>
+                    <rect x="22" y="10" width="2.6" height="4" rx="1.3"></rect>
+                </svg>
+            </span>
+            <h1>两只老虎</h1>
+            <p>音乐体验 · 让震动跟随音频变化，感受整首歌曲。</p>
+            <button id="startButton" type="button">开始体验</button>
+            <p class="start-note">
+                点击同时解锁音频与震动。在 Android Chrome 上可以感受到真实的马达震动，
+                其他设备请看画面中的「马达指令」。
+            </p>
+        </div>
+    </div>
+
+    <script src="data/song-data.js"></script>
+    <script src="assets/audio-haptic-signal.js"></script>
+    <script src="assets/haptic-engine.js"></script>
+    <script src="assets/experience-model.js"></script>
+    <script src="assets/tactile-tone.js"></script>
+    <script src="assets/app.js"></script>
+</body>
+
+</html>
